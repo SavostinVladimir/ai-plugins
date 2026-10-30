@@ -48,6 +48,32 @@ class ManagerTests(unittest.TestCase):
         self.assertEqual(len(result['operations'][0]['models']),5)
         self.assertIn('NOT VERIFIED',result['runtime_verification'])
 
+    def test_code_review_lifecycle_preserves_spec_review(self):
+        self.run_cli('install','spec-review')
+        spec_role=self.dest/'agents/spec-cuj.toml'
+        spec_original=spec_role.read_bytes()
+        plan=self.run_cli('plan','code-review')
+        self.assertEqual(len(plan['operations'][0]['models']),6)
+        self.assertFalse((self.dest/'skills/code-review').exists())
+        self.run_cli('install','code-review')
+        sources=self.catalog/'frameworks/code-review/agents'
+        self.assertEqual(len(list(sources.glob('*.toml'))),6)
+        for source in sources.glob('*.toml'):
+            self.assertEqual((self.dest/'agents'/source.name).read_bytes(),source.read_bytes())
+        installed_skill=(self.dest/'skills/code-review/SKILL.md').read_text()
+        self.assertIn(str((self.dest/'agents').resolve()),installed_skill)
+        self.assertNotIn('{{agents_path}}',installed_skill)
+        self.assertEqual(self.run_cli('install','code-review')['changes'],[])
+        self.run_cli('update',extra=['--installed'])
+        for package in self.run_cli('check')['packages']:
+            self.assertEqual(package['issues'],[])
+        self.run_cli('uninstall','code-review')
+        self.assertFalse(any((self.dest/'skills/code-review').rglob('*.*')))
+        self.assertFalse((self.dest/'agents/code-style.toml').exists())
+        self.assertEqual(spec_role.read_bytes(),spec_original)
+        self.assertIn('agent-frameworks:spec-review:begin',self.instructions().read_text())
+        self.assertNotIn('agent-frameworks:code-review:begin',self.instructions().read_text())
+
     def test_codex_install_idempotent_check_and_remove(self):
         self.dest.mkdir(); self.instructions().write_text('Existing user rules.\n')
         original=self.instructions().read_bytes()

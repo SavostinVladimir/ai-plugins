@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ревью кода: 6 агентов"
+  short_description: "Состояние, тесты, архитектура, стиль, OWASP и спека"
+  default_prompt: "Используй $code-review: проверь изменения шестью независимыми ревьюерами."

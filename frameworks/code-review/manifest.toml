@@ -1,0 +1,4 @@
+id = "code-review"
+version = "1.0.0"
+name = "Code review"
+description = "Six independent native Codex code reviewers with role-specific context."

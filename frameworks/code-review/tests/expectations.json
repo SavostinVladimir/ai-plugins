@@ -1,0 +1,15 @@
+{
+  "usage": "Coordinator-only expectations; never send this file to reviewers. Review fixture files as the complete proposed module replacing a module that exposed Stock and available. Send request/spec only to code-spec, README conventions to style/architecture, no author hypotheses.",
+  "bad": {
+    "code-concurrency": ["Two callers can both read one unit, both return True and overwrite the count with zero."],
+    "code-tests": ["The test mocks reserve itself; removing the stock update would still pass."],
+    "code-architecture": ["ReservationAdapter forwards the identical operation without adding responsibilities; assess proportionality without requiring a rewrite."],
+    "code-style": ["Successful reads are logged despite the explicit fixture convention."],
+    "code-security": ["No established critical OWASP vulnerability; do not manufacture one from an inventory race."],
+    "code-spec": ["Nonpositive quantities are accepted; negative quantities increase stock.", "The existing available API is removed/renamed."]
+  },
+  "good": "No seeded defects. Findings require independent concrete evidence, not a quota.",
+  "missing_style": "Use a scratch copy without fixture README. Style reviewer must request parent documentation delegation, remain incomplete, and not edit files or derive conventions itself.",
+  "missing_spec": "Omit spec.md from the fidelity packet. It must mark fidelity incomplete, not infer a specification from code or the original request.",
+  "dispatch": "All six roles, Luna/high, history-free packets; style/security do not receive prompt/spec; use waves under slot limits. These are live orchestration checks, not proven by the installer tests."
+}
