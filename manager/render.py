@@ -3,7 +3,7 @@ import json
 import re
 import tomllib
 from pathlib import Path
-from .configuration import FrameworkError, read_toml
+from .configuration import FrameworkError, read_toml, destination_path
 
 VALID_ID = re.compile(r'^[a-z][a-z0-9-]*$')
 
@@ -32,7 +32,13 @@ def render(root, name, cfg, args, saved=None):
     package = root/'frameworks'/name
     previous = {} if args.reset_overrides else (saved or {}).get('overrides',{})
     overrides = {'roles': {}}
-    settings, output = {}, {}
+    settings, output, destinations = {}, {}, {}
+    def emit(path, data):
+        actual = str(destination_path(path))
+        if actual in output:
+            raise FrameworkError(f'Duplicate package destination: {actual}')
+        output[actual] = data
+        destinations[actual] = str(path)
     role_files = sorted((package/'agents').glob('*.toml'))
     if not role_files:
         raise FrameworkError(f'Package {name} has no native agent TOML files')
@@ -69,7 +75,7 @@ def render(root, name, cfg, args, saved=None):
         tomllib.loads(text)
         settings[agent]=selected
         overrides['roles'][agent]=local
-        output[str(cfg['paths']['agents']/path.name)]=text.encode('utf-8')
+        emit(cfg['paths']['agents']/path.name,text.encode('utf-8'))
     skill_root=package/'skills'/name
     if not (skill_root/'SKILL.md').is_file():
         raise FrameworkError(f'Package requires skills/{name}/SKILL.md')
@@ -86,6 +92,6 @@ def render(root, name, cfg, args, saved=None):
             text=data.decode('utf-8').replace('{{agents_path}}',str(cfg['paths']['agents']))
             if re.search(r'\{\{[^}]+\}\}',text): raise FrameworkError('Unresolved skill placeholder')
             data=text.encode('utf-8')
-        output[str(cfg['paths']['skills']/name/path.relative_to(skill_root))]=data
+        emit(cfg['paths']['skills']/name/path.relative_to(skill_root),data)
     rule=source_file(package,'instructions.md').replace('{{invocation}}','$'+name).strip()
-    return dict(files=output,rule=rule,version=manifest['version'],settings=settings,overrides=overrides)
+    return dict(files=output,destinations=destinations,rule=rule,version=manifest['version'],settings=settings,overrides=overrides)

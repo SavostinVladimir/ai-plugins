@@ -8,6 +8,11 @@ import tomllib
 class FrameworkError(Exception):
     pass
 
+def destination_path(path):
+    """Resolve destination directories while retaining final-file symlink checks."""
+    path = Path(path)
+    return path.parent.resolve() / path.name
+
 def read_toml(path):
     try:
         return tomllib.loads(Path(path).read_text(encoding='utf-8'))
@@ -24,7 +29,7 @@ def resolve_path(value, base):
     if not path.is_absolute():
         path = base / path
     # Resolve parents, but preserve the final component for symlink checks.
-    return path.parent.resolve() / path.name
+    return destination_path(path)
 
 def configure(args):
     home = Path.home()

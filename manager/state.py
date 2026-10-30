@@ -77,7 +77,7 @@ def transaction(directory, changes, before):
         failures=[]
         for path in reversed(written):
             try: atomic_write(path,before[path])
-            except OSError as rollback_error: failures.append(str(rollback_error))
+            except Exception as rollback_error: failures.append(f'{path}: {rollback_error}')
         detail='; rollback failed: '+str(failures) if failures else '; previous contents restored'
         raise FrameworkError(f'Transaction failed: {exc}{detail}. Recovery journal: {journal}') from exc
     return str(journal)

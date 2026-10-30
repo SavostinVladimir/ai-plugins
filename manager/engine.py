@@ -3,7 +3,7 @@ from pathlib import Path
 import hashlib
 import json
 import re
-from .configuration import FrameworkError
+from .configuration import FrameworkError, destination_path
 from .render import render, VALID_ID
 from .state import read_bytes, encode, decode, transaction, locked
 
@@ -13,8 +13,7 @@ def digest(data):
 def state_path(cfg):
     return cfg['paths']['state']/'installed.json'
 
-def load_state(cfg):
-    raw=read_bytes(state_path(cfg))
+def load_state(cfg,raw):
     if raw is None:
         return {'schema':1,'binding':cfg['binding'],'packages':{}}
     try:
@@ -23,11 +22,19 @@ def load_state(cfg):
             raise FrameworkError('State binding differs from target/instance/destination paths; use a separate state directory')
         for name,package in state['packages'].items():
             if not VALID_ID.fullmatch(name): raise ValueError('invalid package')
-            for path in package['files']:
-                p=Path(path)
-                under_skill=p.is_relative_to(cfg['paths']['skills']/name)
-                under_agents=p.parent==cfg['paths']['agents'] and p.suffix in ('.toml','.md')
+            files={}
+            for path,record in package['files'].items():
+                p=destination_path(path)
+                logical=Path(record.get('destination',path))
+                under_skill=logical.is_relative_to(cfg['paths']['skills']/name)
+                under_agents=logical.parent==cfg['paths']['agents'] and logical.suffix in ('.toml','.md')
                 if not (under_skill or under_agents): raise ValueError('file outside bound destinations')
+                if destination_path(logical)!=p: raise ValueError('destination changed since installation')
+                if p in {destination_path(cfg['paths'][key]) for key in ('instructions','config')} | {destination_path(state_path(cfg))}:
+                    raise ValueError('destination collision with protected file')
+                if str(p) in files: raise ValueError('duplicate package destination')
+                files[str(p)]=record
+            package['files']=files
         return state
     except (ValueError,KeyError,TypeError) as exc:
         raise FrameworkError(f'Invalid state registry {state_path(cfg)}: {exc}') from exc
@@ -44,7 +51,7 @@ def find_block(text,name):
     if finish<len(text) and text[finish]=='\n': finish+=1
     return start,finish,text[start:finish]
 
-def build_plan(root,cfg,args,state):
+def build_plan(root,cfg,args,state,original_state):
     selected=sorted(state['packages']) if args.installed else [args.framework] if args.framework else []
     if not selected:
         if args.installed: return dict(changes={},before={},state=state,operations=[],conflicts=[],packages=[])
@@ -53,15 +60,14 @@ def build_plan(root,cfg,args,state):
         raise FrameworkError('Choose a framework or --installed, not both')
     new=deepcopy(state)
     changes,before,operations,conflicts={},{},[],[]
-    instruction_path=str(cfg['paths']['instructions'])
+    instruction_path=str(destination_path(cfg['paths']['instructions']))
     original_instruction=read_bytes(instruction_path)
     try: instruction_text=(original_instruction or b'').decode('utf-8')
     except UnicodeDecodeError as exc: raise FrameworkError('Instructions must be UTF-8') from exc
     source_instruction=instruction_text
     owners={path:name for name,package in state['packages'].items() for path in package['files']}
     planned_owners={}
-    def change(path,data):
-        old=read_bytes(path)
+    def change(path,data,old):
         if old!=data:
             changes[path]=data; before[path]=old
     for name in selected:
@@ -79,7 +85,7 @@ def build_plan(root,cfg,args,state):
                 current=read_bytes(path)
                 if current is None or digest(current)!=record['hash']:
                     conflicts.append(f'Modified/missing managed file: {path}')
-                else: change(path,decode(record['original']))
+                else: change(path,decode(record['original']),current)
             if block:
                 start,end,_=block
                 spacer=previous.get('spacer','')
@@ -95,7 +101,7 @@ def build_plan(root,cfg,args,state):
                 conflicts.append(f'Existing unmarked {name} instruction: reconcile it manually into a managed block; --adopt never rewrites global instructions')
         files={}
         for path,data in built['files'].items():
-            if path in (instruction_path,str(state_path(cfg)),str(cfg['paths']['config'])):
+            if path in (instruction_path,str(destination_path(state_path(cfg))),str(destination_path(cfg['paths']['config']))):
                 raise FrameworkError(f'Destination collision: {path}')
             if path in planned_owners and planned_owners[path]!=name:
                 raise FrameworkError(f'Duplicate package destination: {path}')
@@ -113,14 +119,16 @@ def build_plan(root,cfg,args,state):
                     conflicts.append(f'Existing unowned file (use --adopt after review): {path}')
                 original=encode(current)
             files[path]={'hash':digest(data),'original':original}
-            change(path,data)
+            if built['destinations'][path]!=path:
+                files[path]['destination']=built['destinations'][path]
+            change(path,data,current)
         # Remove only unchanged old artifacts that no longer belong to this package.
         for path,record in (previous or {}).get('files',{}).items():
             if path in files: continue
             current=read_bytes(path)
             if current is None or digest(current)!=record['hash']:
                 conflicts.append(f'Modified retired artifact: {path}')
-            else: change(path,decode(record['original']))
+            else: change(path,decode(record['original']),current)
         begin,end=markers(name)
         desired=begin+'\n'+built['rule']+'\n'+end+'\n'
         spacer=(previous or {}).get('spacer','')
@@ -137,10 +145,10 @@ def build_plan(root,cfg,args,state):
         keep_empty = original_instruction is not None
         if args.command=='uninstall' and not instruction_text:
             keep_empty=any(state['packages'][n].get('instructions_existed',True) for n in selected)
-        change(instruction_path,instruction_text.encode('utf-8') if instruction_text or keep_empty else None)
-    registry=str(state_path(cfg))
+        change(instruction_path,instruction_text.encode('utf-8') if instruction_text or keep_empty else None,original_instruction)
+    registry=str(destination_path(state_path(cfg)))
     data=(json.dumps(new,indent=2,ensure_ascii=False)+'\n').encode('utf-8')
-    if new!=state: change(registry,data)
+    if new!=state: change(registry,data,original_state)
     return dict(changes=changes,before=before,state=new,operations=operations,conflicts=conflicts,packages=selected)
 
 def report(plan,cfg):
@@ -150,7 +158,7 @@ def report(plan,cfg):
 
 def execute(root,cfg,args):
     if args.command in ('status','check'):
-        state=load_state(cfg); rows=[]
+        state=load_state(cfg,read_bytes(state_path(cfg))); rows=[]
         for name,record in state['packages'].items():
             if args.framework and args.framework!=name: continue
             issues=[]
@@ -171,10 +179,12 @@ def execute(root,cfg,args):
         if args.command=='check' and not rows: raise FrameworkError('No installed packages to check')
         return result,2 if any(row['issues'] for row in rows) else 0
     if args.command=='plan' or args.dry_run:
-        plan=build_plan(root,cfg,args,load_state(cfg))
+        original_state=read_bytes(state_path(cfg))
+        plan=build_plan(root,cfg,args,load_state(cfg,original_state),original_state)
         return report(plan,cfg),2 if plan['conflicts'] else 0
     with locked(cfg['paths']['state']):
-        plan=build_plan(root,cfg,args,load_state(cfg))
+        original_state=read_bytes(state_path(cfg))
+        plan=build_plan(root,cfg,args,load_state(cfg,original_state),original_state)
         result=report(plan,cfg)
         if plan['conflicts']: return result,2
         backup=transaction(cfg['paths']['state'],plan['changes'],plan['before'])

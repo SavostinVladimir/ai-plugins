@@ -12,13 +12,13 @@ from unittest.mock import patch
 from manager.cli import main, ROOT
 from manager.configuration import configure, FrameworkError
 from manager.cli import parser
-from manager import state
+from manager import engine, state
 
 class ManagerTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.base=Path(self.tmp.name)
+        self.base=Path(self.tmp.name).resolve()
         self.catalog=self.base/'catalog'
         for folder in ('frameworks',):
             shutil.copytree(ROOT/folder,self.catalog/folder)
@@ -121,6 +121,26 @@ class ManagerTests(unittest.TestCase):
         self.run_cli('uninstall','spec-review')
         self.assertIn('Additional rules',self.instructions().read_text())
 
+    def test_instruction_edit_during_planning_is_preserved(self):
+        for original in (None,b'Existing rules\n'):
+            with self.subTest(original=original):
+                self.dest.mkdir(exist_ok=True)
+                if original is None:
+                    self.instructions().unlink(missing_ok=True)
+                else:
+                    self.instructions().write_bytes(original)
+                edited=(original or b'')+b'Added during planning\n'
+                real_render=engine.render
+                def edit_during_render(*args,**kwargs):
+                    self.instructions().write_bytes(edited)
+                    return real_render(*args,**kwargs)
+                with patch.object(engine,'render',side_effect=edit_during_render):
+                    result=self.run_cli('install','spec-review',expected=2)
+                self.assertIn('File changed after planning',result['error'])
+                self.assertEqual(self.instructions().read_bytes(),edited)
+                self.assertFalse((self.dest/'agents/spec-alignment.toml').exists())
+                self.assertFalse((self.dest/'state/installed.json').exists())
+
     def test_instruction_drift_blocks_all_changes(self):
         self.run_cli('install','spec-review')
         self.instructions().write_text(self.instructions().read_text().replace('CUJ','CHANGED'))
@@ -129,6 +149,24 @@ class ManagerTests(unittest.TestCase):
         result=self.run_cli('check',expected=2)
         self.assertTrue(result['packages'][0]['issues'])
         self.run_cli('update','spec-review',expected=2)
+
+    def test_registry_edit_during_planning_is_preserved(self):
+        self.run_cli('install','spec-review')
+        registry=self.dest/'state/installed.json'
+        edited=registry.read_bytes()+b'\n'
+        source=self.catalog/'frameworks/spec-review/agents/spec-cuj.toml'
+        source.write_text(source.read_text().replace('gpt-6-luna','changed-model'))
+        installed=self.dest/'agents/spec-cuj.toml'
+        original=installed.read_bytes()
+        real_render=engine.render
+        def edit_during_render(*args,**kwargs):
+            registry.write_bytes(edited)
+            return real_render(*args,**kwargs)
+        with patch.object(engine,'render',side_effect=edit_during_render):
+            result=self.run_cli('update','spec-review',expected=2)
+        self.assertIn('File changed after planning',result['error'])
+        self.assertEqual(registry.read_bytes(),edited)
+        self.assertEqual(installed.read_bytes(),original)
 
     def test_cli_overrides_persist_but_role_instance_can_override(self):
         self.run_cli('install','spec-review',extra=['--model','custom-small','--effort','medium'])
@@ -197,6 +235,32 @@ class ManagerTests(unittest.TestCase):
         self.assertFalse((self.dest/'state/installed.json').exists())
         self.assertTrue(list((self.dest/'state/backups').glob('*.json')))
 
+    def test_rollback_continues_after_file_becomes_symlink(self):
+        self.dest.mkdir()
+        paths=[self.dest/name for name in ('first','second','third')]
+        before={str(path):b'original' for path in paths}
+        for path in paths: path.write_bytes(b'original')
+        foreign=self.base/'foreign';foreign.write_bytes(b'foreign')
+        real_write=state.atomic_write
+        def fail_third(path,data):
+            if Path(path)==paths[2]:
+                paths[1].unlink()
+                paths[1].symlink_to(foreign)
+                raise PermissionError('simulated write failure')
+            return real_write(path,data)
+        with patch.object(state,'atomic_write',side_effect=fail_third):
+            with self.assertRaises(FrameworkError) as caught:
+                state.transaction(self.dest/'state',{str(p):b'changed' for p in paths},before)
+        self.assertEqual(paths[0].read_bytes(),b'original')
+        self.assertTrue(paths[1].is_symlink())
+        self.assertEqual(foreign.read_bytes(),b'foreign')
+        self.assertEqual(paths[2].read_bytes(),b'original')
+        journal,=list((self.dest/'state/backups').glob('*.json'))
+        self.assertIn('rollback failed',str(caught.exception))
+        self.assertIn(str(paths[1]),str(caught.exception))
+        self.assertIn(f'Recovery journal: {journal}',str(caught.exception))
+        self.assertEqual(json.loads(journal.read_text()),{p:state.encode(v) for p,v in before.items()})
+
     def test_relative_paths_precedence_environment_and_override(self):
         machine=self.base/'machine.toml'
         machine.write_text('[instances.corp]\ntarget="codex"\n[instances.corp.paths]\nagents="mount/agents"\nskills="mount/skills"\ninstructions="mount/rules.md"\nstate="mount/state"\n')
@@ -220,6 +284,49 @@ class ManagerTests(unittest.TestCase):
         source=self.catalog/'frameworks/spec-review/agents/spec-cuj.toml'
         source.unlink();source.symlink_to(other)
         self.run_cli('plan','spec-review',expected=2)
+
+    def test_parent_symlink_plan_and_lifecycle_use_actual_destinations(self):
+        skills=self.dest/'skills';skills.mkdir(parents=True)
+        actual=self.base/'external-skills';actual.mkdir()
+        (skills/'spec-review').symlink_to(actual,target_is_directory=True)
+        nested=self.base/'external-metadata';nested.mkdir()
+        (actual/'agents').symlink_to(nested,target_is_directory=True)
+        plan=self.run_cli('plan','spec-review')
+        changes={entry['path'] for entry in plan['changes']}
+        self.assertIn(str(actual/'SKILL.md'),changes)
+        self.assertIn(str(nested/'openai.yaml'),changes)
+        self.assertFalse(any(p.startswith(str(skills/'spec-review')+'/') for p in changes))
+        self.assertFalse((actual/'SKILL.md').exists())
+        self.run_cli('install','spec-review')
+        self.assertTrue((actual/'SKILL.md').is_file())
+        self.assertEqual(self.run_cli('check')['packages'][0]['issues'],[])
+        self.assertEqual(self.run_cli('update','spec-review')['changes'],[])
+        self.run_cli('uninstall','spec-review')
+        self.assertFalse((actual/'SKILL.md').exists())
+        self.assertFalse((nested/'openai.yaml').exists())
+
+    def test_parent_symlink_cannot_alias_protected_files(self):
+        skills=self.dest/'skills';skills.mkdir(parents=True)
+        actual=self.base/'external-skills';actual.mkdir()
+        (skills/'spec-review').symlink_to(actual,target_is_directory=True)
+        protected=actual/'SKILL.md';protected.write_bytes(b'protected')
+        for flag in ('--config-path','--instructions-path'):
+            for command in ('plan','install'):
+                with self.subTest(flag=flag,command=command):
+                    result=self.run_cli(command,'spec-review',extra=[flag,str(protected),'--adopt'],expected=2)
+                    self.assertIn('Destination collision',result['error'])
+                    self.assertEqual(protected.read_bytes(),b'protected')
+                    self.assertFalse((self.dest/'agents/spec-alignment.toml').exists())
+
+    def test_final_symlink_below_parent_symlink_is_rejected(self):
+        skills=self.dest/'skills';skills.mkdir(parents=True)
+        actual=self.base/'external-skills';actual.mkdir()
+        (skills/'spec-review').symlink_to(actual,target_is_directory=True)
+        foreign=self.base/'foreign';foreign.write_bytes(b'foreign')
+        (actual/'SKILL.md').symlink_to(foreign)
+        result=self.run_cli('install','spec-review',extra=['--adopt'],expected=2)
+        self.assertIn('Refusing final-file symlink',result['error'])
+        self.assertEqual(foreign.read_bytes(),b'foreign')
 
     def test_native_model_source_change_updates_installation(self):
         source=self.catalog/'frameworks/spec-review/agents/spec-cuj.toml'
