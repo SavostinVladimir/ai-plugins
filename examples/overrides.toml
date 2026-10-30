@@ -1,0 +1,5 @@
+[instances.personal]
+
+[instances.personal.roles.spec-grounding]
+model = "gpt-6-luna"
+effort = "high"

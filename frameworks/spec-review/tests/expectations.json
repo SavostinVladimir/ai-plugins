@@ -1,0 +1,11 @@
+{
+  "bad": {
+    "spec-alignment": "CSV and JSON requirements conflict",
+    "spec-excess": "Daily email introduces an expressly excluded obligation",
+    "spec-gaps": "Active-only selection and empty-result behavior are missing",
+    "spec-grounding": "Source returns list(rows), not a streaming generator",
+    "spec-cuj": "Backend steps do not describe a user's actions and observable outcome"
+  },
+  "good": "No findings for the deliberately corrected defects. Do not invent mandatory screens, retries, auth, metrics or notifications.",
+  "usage": "Only the coordinator reads expectations. Send reviewers request.md, one fixed spec and src/export.py; never send expected findings."
+}

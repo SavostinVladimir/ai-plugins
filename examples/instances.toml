@@ -1,0 +1,14 @@
+# Copy outside the repository; all paths are examples for the machine running the installer.
+[instances.corporate-codex]
+
+[instances.corporate-codex.paths]
+agents = "/sandbox/config/codex/agents"
+skills = "/sandbox/extensions/skills"
+instructions = "/sandbox/config/codex/AGENTS.md"
+config = "/sandbox/config/codex/config.toml"
+state = "/sandbox/state/agent-frameworks/corporate-codex"
+
+[instances.corporate-codex.roles.spec-grounding]
+model = "gpt-6-luna"
+effort = "high"
+

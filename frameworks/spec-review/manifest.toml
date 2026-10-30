@@ -1,0 +1,4 @@
+id = "spec-review"
+version = "1.0.0"
+name = "Specification review"
+description = "Five independent native Codex specification reviewers."
