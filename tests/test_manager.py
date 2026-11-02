@@ -53,11 +53,11 @@ class ManagerTests(unittest.TestCase):
         spec_role=self.dest/'agents/spec-cuj.toml'
         spec_original=spec_role.read_bytes()
         plan=self.run_cli('plan','code-review')
-        self.assertEqual(len(plan['operations'][0]['models']),6)
+        self.assertEqual(len(plan['operations'][0]['models']),7)
         self.assertFalse((self.dest/'skills/code-review').exists())
         self.run_cli('install','code-review')
         sources=self.catalog/'frameworks/code-review/agents'
-        self.assertEqual(len(list(sources.glob('*.toml'))),6)
+        self.assertEqual(len(list(sources.glob('*.toml'))),7)
         for source in sources.glob('*.toml'):
             self.assertEqual((self.dest/'agents'/source.name).read_bytes(),source.read_bytes())
         installed_skill=(self.dest/'skills/code-review/SKILL.md').read_text()

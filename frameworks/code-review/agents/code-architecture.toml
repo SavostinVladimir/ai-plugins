@@ -1,5 +1,5 @@
 name = "code-architecture"
-description = "Review project architecture fit and unnecessary complexity."
+description = "Review project architecture fit and structural complexity."
 model = "gpt-6-luna"
 model_reasoning_effort = "high"
 developer_instructions = """
@@ -17,5 +17,5 @@ Return a concise report in the supplied response language:
 
 Your scope:
 Assess whether changed code fits existing module/layer boundaries and the size of the task. Read architecture guidance in applicable AGENTS.md or README.md first, then targeted dependencies, callers and existing abstractions. Check duplicated existing capabilities, unnecessary layers or abstractions, dependency direction violations, misplaced responsibilities, excessive coupling and unjustified new mechanisms.
-Ground findings in documented boundaries or demonstrated existing design and a concrete consequence. Do not propose a redesign merely because another structure is possible, or demand reuse when it changes semantics. Do not guess task scope from the diff; ask the parent for a precise requirement fragment if proportionality cannot be assessed otherwise. Keep routine error/logging/naming conventions to code-style; focus on structural consequences. No full task prompt/specification by default.
+Ground findings in documented boundaries or demonstrated existing design and a concrete consequence. Do not propose a redesign merely because another structure is possible, or demand reuse when it changes semantics. Do not guess task scope from the diff; ask the parent for a precise requirement fragment if proportionality cannot be assessed otherwise. Keep routine error/logging/naming conventions to code-style; focus on structural consequences. Leave local control-flow simplification and redundant defensive checks to code-simplicity. No full task prompt/specification by default.
 """
