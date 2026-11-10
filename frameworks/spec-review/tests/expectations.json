@@ -3,7 +3,7 @@
     "spec-alignment": "CSV and JSON requirements conflict",
     "spec-excess": "Daily email introduces an expressly excluded obligation",
     "spec-gaps": "Active-only selection and empty-result behavior are missing",
-    "spec-grounding": "Source returns list(rows), not a streaming generator",
+    "spec-grounding": "S-04 contradicts the source, which returns list(rows), not a streaming generator. S-05 is true but lacks a clickable source link in the specification; a plain path and symbol are insufficient.",
     "spec-cuj": "Backend steps do not describe a user's actions and observable outcome"
   },
   "good": "No findings for the deliberately corrected defects. Do not invent mandatory screens, retries, auth, metrics or notifications.",

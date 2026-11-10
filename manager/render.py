@@ -40,8 +40,6 @@ def render(root, name, cfg, args, saved=None):
         output[actual] = data
         destinations[actual] = str(path)
     role_files = sorted((package/'agents').glob('*.toml'))
-    if not role_files:
-        raise FrameworkError(f'Package {name} has no native agent TOML files')
     for path in role_files:
         text = source_file(package,str(path.relative_to(package)))
         role = tomllib.loads(text)

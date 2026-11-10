@@ -1,0 +1,11 @@
+{"timestamp": "2026-11-09T10:00:00Z", "type": "session_meta", "payload": {"id": "fixture-b", "cwd": "/projects/alpha"}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "turn_context", "payload": {"turn_id": "b1"}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "Check the integration fixture."}]}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": "Project alpha: the supported integration-test command is python3 -m unittest discover -s integration_tests -v."}]}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "function_call", "name": "exec_command", "call_id": "b-search1", "arguments": "{\"cmd\": \"rg \\\"test integration\\\" README.md Makefile\"}"}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "function_call_output", "call_id": "b-search1", "output": "No matches."}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "function_call", "name": "exec_command", "call_id": "b-guess", "arguments": "{\"cmd\": \"make integration\"}"}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "function_call_output", "call_id": "b-guess", "output": "No rule to make target integration."}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "function_call", "name": "exec_command", "call_id": "b-search2", "arguments": "{\"cmd\": \"rg \\\"unittest\\\" AGENTS.md\"}"}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "function_call_output", "call_id": "b-search2", "output": "The supported integration-test command is python3 -m unittest discover -s integration_tests -v."}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "The command was already in the supplied instructions."}]}}

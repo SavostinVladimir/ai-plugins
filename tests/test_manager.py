@@ -183,7 +183,8 @@ class ManagerTests(unittest.TestCase):
         self.run_cli('install','spec-review')
         package=self.catalog/'frameworks/spec-review'
         manifest=package/'manifest.toml'
-        manifest.write_text(manifest.read_text().replace('1.0.0','1.1.0'))
+        version=tomllib.loads(manifest.read_text())['version']
+        manifest.write_text(manifest.read_text().replace(f'version = "{version}"','version = "1.1.0"'))
         self.assertTrue(self.run_cli('status')['packages'][0]['update_available'])
         self.run_cli('update',extra=['--installed'])
         self.assertEqual(self.run_cli('status')['packages'][0]['version'],'1.1.0')

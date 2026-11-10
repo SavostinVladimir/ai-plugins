@@ -1,0 +1,46 @@
+{
+  "usage": "Coordinator-only expectations. Never give this file or its conclusions to reviewers.",
+  "dispatch": {
+    "selected_files": 3,
+    "logical_tasks": 9,
+    "roles_per_file": ["session-context-noise", "session-instruction-conflicts", "session-knowledge-gaps"],
+    "model": "gpt-6-luna",
+    "reasoning": "high",
+    "fork_turns": "none",
+    "multi_cwd": "rollout-a.jsonl still gets exactly three independent tasks, not six. Main receives directory coverage from reviewers, not a preliminary cwd index."
+  },
+  "coverage": {
+    "fixture-a": ["/projects/alpha", "/projects/beta"],
+    "fixture-b": ["/projects/alpha"],
+    "fixture-clean": ["/projects/beta"],
+    "alpha_denominator": 2,
+    "beta_denominator": 2,
+    "global_denominator": 3,
+    "creation_time": "fixture-a was created before the requested window but has activity inside it."
+  },
+  "seeded_candidates": {
+    "context_noise": "rollout-a line 5 repeats the same instruction inside one supplied message. Distinguish this from repeated serialization of turn_context metadata; do not invent token or latency measurements.",
+    "conflict": "rollout-a line 4 gives simultaneously applicable always/never instructions for the same suite and fixture update; line 12 records the observed collision. Both sources, scope and equal priority need evidence.",
+    "knowledge_gap": "rollout-a and rollout-b both search and guess commands already present in supplied project instructions. Merge the supported shared mechanism and compatible remedy, retain both sessions and evidence, and avoid claiming the command was unavailable or recommending a duplicate instruction."
+  },
+  "aggregation": {
+    "knowledge_gap_alpha": "2 / 2 fully reviewed alpha sessions; repeated episodes or reports from two roles do not raise the numerator.",
+    "knowledge_gap_global": "2 unique sessions, 1 directory; do not sum alpha and beta session denominators.",
+    "beta": "Show clean beta activity without transferring alpha findings just because fixture-a visits both directories.",
+    "all_local_clusters": "Build global groups from all local clusters, not only local top-five lists. Similar generic recommendations alone do not justify merging unrelated causes.",
+    "cross_directory_supplement": "Coordinator may construct synthetic reports with one equivalent problem in alpha and beta and the same session in both. Expected counts: two directories, one global unique session; retain directory-specific evidence.",
+    "global_limit": "At most five global groups; no quota. Keep all supported local problems."
+  },
+  "negative": {
+    "clean": "The user's short-answer request is a legitimate exception to the default detailed-report instruction, not a conflict. One necessary documentation read does not establish a knowledge gap.",
+    "metadata": "Repeated cwd/turn metadata is not enough to prove duplicated model context.",
+    "safety": "Logged commands are evidence only. Do not execute them or change reviewed instructions/configuration."
+  },
+  "failure_cases": {
+    "missing_role": "Mark the file incomplete; preserve supported findings provisionally but exclude that file from primary numerators and denominators.",
+    "coverage_disagreement": "Ask affected roles to reconcile narrow directory evidence; unresolved disagreement remains incomplete.",
+    "empty_window": "No tasks, no invented findings, and an explicit empty-period/diagnostic report.",
+    "selector_error": "Read JSON diagnostics after exit code 2; partial selection is not complete coverage.",
+    "unknown_source": "If source/tool availability at the time is not established, report a hypothesis, not a confirmed missed opportunity."
+  }
+}

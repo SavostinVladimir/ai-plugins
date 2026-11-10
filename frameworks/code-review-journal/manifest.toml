@@ -1,0 +1,4 @@
+id = "code-review-journal"
+version = "1.1.0"
+name = "Code review journal"
+description = "Record user correction rounds as evidence for improving agent and reviewer prompts."

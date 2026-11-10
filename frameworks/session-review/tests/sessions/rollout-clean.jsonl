@@ -1,0 +1,7 @@
+{"timestamp": "2026-11-09T10:00:00Z", "type": "session_meta", "payload": {"id": "fixture-clean", "cwd": "/projects/beta"}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "turn_context", "payload": {"turn_id": "c1", "cwd": "/projects/beta"}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": "Default to a detailed report unless the user requests a short one."}]}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "Show one sentence confirming the documentation exists."}]}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "function_call", "name": "exec_command", "call_id": "c-read", "arguments": "{\"cmd\": \"cat README.md\"}"}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "function_call_output", "call_id": "c-read", "output": "Project beta documentation."}}
+{"timestamp": "2026-11-09T10:00:00Z", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "The project documentation exists in README.md."}]}}
