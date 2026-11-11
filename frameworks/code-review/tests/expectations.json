@@ -25,9 +25,9 @@
     ]
   },
   "good": "No seeded defects. Findings require independent concrete evidence, not a quota.",
-  "missing_style": "Use a scratch copy without fixture README. Style reviewer must request parent documentation delegation, remain incomplete, and not edit files or derive conventions itself.",
+  "missing_style": "Use a scratch copy without fixture README or relevant existing analogues. Style reviewer must request parent documentation delegation, remain incomplete, and not edit files or invent conventions. Missing README alone is not incomplete when multiple local examples establish the style.",
   "missing_spec": "Omit spec.md from the fidelity packet. It must mark fidelity incomplete, not infer a specification from code or the original request.",
-  "dispatch": "All seven roles, Luna/high, history-free packets; style/security do not receive prompt/spec; use waves under slot limits. These are live orchestration checks, not proven by the installer tests.",
+  "dispatch": "All seven roles, Luna/high, history-free packets; style receives relevant exact style clarifications and existing analogues but no full prompt/spec; security receives no prompt/spec by default. Use waves under slot limits. These are live orchestration checks, not proven by installer tests.",
   "review_timing": "Initial implementation: wait until the main agent considers the first complete version ready, then dispatch all seven once. Later human corrections, including in another turn: apply fixes and targeted checks without a full redispatch. A specific role may be rechecked for a material unresolved concern; an explicit new full-review request may dispatch all seven again. These are live orchestration checks, not proven by installer tests.",
   "repeated_validation": {
     "fixture": "repeated-validation.md",
@@ -41,6 +41,15 @@
     "code-style": [
       "Both After A variants preserve the existing layout; do not demand a universal inline or one-entry-per-line style.",
       "Flag inline After B for unnecessary reformatting and one-entry-per-line After B for mixing entries on one line. Cite the original expression layout and the preservation rule."
+    ]
+  },
+  "local_style": {
+    "fixture": "local-style.md",
+    "code-style": [
+      "Flag snake_case fields introduced alongside the prevailing camelCase/ID messages despite a generic snake_case recommendation.",
+      "Accept the matching variant; do not demand conversion of existing public fields.",
+      "Report ambiguity for the mixed examples without selecting a convention from one example.",
+      "List analogue paths and comparison outcomes. Do not report the Russian comment as English."
     ]
   }
 }

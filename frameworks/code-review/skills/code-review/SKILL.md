@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Review code changes with seven independent Luna reviewers for concurrency and state integrity, test quality, architecture, overengineering and simplicity, project conventions, critical OWASP vulnerabilities, and fidelity to the specification. Use for a requested code review; this does not replace specification review.
+description: Review code changes with seven independent Luna reviewers for concurrency and state integrity, test quality, architecture, overengineering and simplicity, established local project style, critical OWASP vulnerabilities, and fidelity to the specification. Use for a requested code review; this does not replace specification review.
 ---
 
 # Independent code review
@@ -30,12 +30,16 @@ Add only the role-specific inputs below. Never send the author's reasoning, susp
 | Role / TOML file | Review scope | Additional inputs |
 | --- | --- | --- |
 | code-concurrency | Concurrent actions, retries and state integrity | Relevant transaction, state ownership, retry and idempotency contracts, where available |
-| code-tests | Whether tests demonstrate behavior and fail for relevant regressions | Changed tests, tested production paths, test commands/configuration; a specific expected-behavior fragment only if essential |
+| code-tests | Whether tests demonstrate behavior and fail for relevant regressions | Changed tests, tested production paths, test commands/configuration; exact user constraints on test level and placement; expected-behavior fragments only where needed |
 | code-architecture | Fit with existing project boundaries and proportional complexity | Architecture guidance in AGENTS.md/README.md and targeted existing abstractions/callers |
-| code-simplicity | Overengineering, unreachable defensive cases and the simplest readable solution | Targeted callers, types, boundary validation and existing helpers; a precise requirement fragment only if essential |
-| code-style | Consistency with documented project conventions | Applicable AGENTS.md and README.md paths/sections; no task prompt or specification |
+| code-simplicity | Overengineering, unreachable defensive cases and the simplest readable solution | Targeted callers, types, boundary validation and existing helpers; exact user constraints on scope and unnecessary additions |
+| code-style | Consistency with established local style and applicable conventions | Applicable AGENTS.md/README.md sections; nearest existing proto, implementation and test analogues; exact user clarifications on style, naming and test placement; no unrelated task history |
 | code-security | Only critical, exploitable OWASP vulnerabilities | Relevant trust boundaries, entry points and security configuration; no task prompt or specification by default |
 | code-spec | Exactly the specified behavior: no omissions, deviations or extra scope | Frozen specification/design/tasks, original user prompt, clarifications and approved decisions with U-IDs |
+
+Label each supplied constraint by its source: user requirement (with exact wording/reference), project rule, or implementation decision. Do not present the author's implementation decisions as required behavior. Supply the role-relevant user constraints in the table proactively; preserving independence does not mean withholding them. Do not forward author justifications or expected findings.
+
+For code-style, provide a focused handwritten diff including source proto and existing analogue paths outside the change. Keep generated artifacts available separately for targeted consistency checks. The reviewer must verify the examples and compare the prevailing local approach, not merely acknowledge the listed paths.
 
 ## Dispatch independently
 
@@ -47,9 +51,9 @@ Launch as many roles concurrently as available slots allow; use waves when fewer
 
 ### Missing code-style documentation
 
-The style reviewer first checks applicable AGENTS.md and README.md, including scoped guidance relevant to changed files. It must not scan the whole project to derive its own code style. If necessary conventions are absent, it returns an incomplete style check and an explicit request to the parent to launch a separate documentation subagent.
+The style reviewer checks applicable AGENTS.md/README.md and representative neighbouring examples for each applicable changed category. For style choices, preserve the prevailing local approach over a generic convention unless an explicit migration is required; surface conflicts with mandatory higher-priority instructions. Do not scan the whole project or infer a convention from one exception. Missing documentation alone does not make the check incomplete if local examples establish the convention. If mixed or insufficient examples and guidance leave the choice unresolved, mark that comparison incomplete and request a separate documentation subagent.
 
-The parent launches that separate subagent with fresh history, Luna/high (or the installed code-style configuration), repository paths and only the missing-conventions request. Its responsibility is to inspect a representative, targeted set of existing files and document supported conventions in the appropriate AGENTS.md. It is not an eighth reviewer and receives no prompt/specification or other findings. Tell it that it is not alone in the codebase, must preserve other edits and existing instructions, must not edit implementation files, and must distinguish observed conventions from new policy. Record examples/paths supporting the documented rules; do not canonize inconsistencies or infer rules from the proposed changes alone.
+The parent launches that separate subagent with fresh history, Luna/high (or the installed code-style configuration), repository paths and only the missing-conventions request. Its responsibility is to inspect a representative, targeted set of existing files and document supported conventions in the appropriate AGENTS.md. It is not an eighth reviewer and receives no prompt/specification or other findings. Tell it that it is not alone in the codebase, must preserve other edits and existing instructions, must not edit implementation files, and must distinguish observed conventions from new policy. Record examples/paths supporting the documented rules; distinguish a prevailing local approach from isolated inconsistencies and never infer rules from the proposed changes alone.
 
 This workflow requests that documentation action; it does not grant additional filesystem permissions. If AGENTS.md cannot be written under existing permissions, report the limitation. Finish unaffected roles. When documentation is available, record the new guidance revision and rerun code-style with a fresh context against the same implementation revision. Treat material new guidance affecting another role as a changed input for that role. Do not claim the original incomplete style result passed.
 
@@ -59,7 +63,9 @@ Wait for all seven reports. Incomplete inputs, unavailable sources, errors and t
 
 Verify material evidence, merge duplicates retaining role attribution and reject unsupported preferences. Resolve conflicts using actual user requirements, the specification and verified project constraints. Keep questions separate from confirmed defects. Do not impose a findings quota. The security role reports critical vulnerabilities only; do not inflate lower-severity issues to fit that threshold or treat its clean report as a comprehensive security audit.
 
-Return a concise report in the user's language containing the reviewed code/specification/guidance revisions, status and limits for each role, then actionable findings ordered by severity. Include file/line evidence, a concrete failure scenario or demonstrated unnecessary complexity, impact and minimal correction. State overall result: changes needed, no findings within the checked scope, or review incomplete. Never imply that passing this review proves all code correct or secure.
+Before accepting complete code-style coverage, verify that it lists the inspected analogue paths and comparison results for every applicable changed category. A generic "AGENTS.md checked, no findings" is insufficient. Verify each reported mismatch against the frozen source; for style, a concrete mismatch supported by a rule, user constraint or prevailing local pattern is enough without a runtime failure scenario.
+
+Return a concise report in the user's language containing the reviewed code/specification/guidance revisions, status and limits for each role, then actionable findings ordered by severity. Include file/line evidence, impact and minimal correction. Explain a concrete failure scenario, demonstrated unnecessary complexity, or, for style, the evidenced mismatch with the applicable convention or prevailing local approach. State overall result: changes needed, no findings within the checked scope, or review incomplete. Never imply that passing this review proves all code correct or secure.
 
 If the ongoing task authorizes fixes, the parent may apply justified changes. Otherwise leave implementation files untouched. Recheck a specific affected role only when a material unresolved concern needs independent verification, with a fresh packet on the new revision; do not restart unaffected roles or the full set. Human follow-up corrections normally need only appropriate targeted checks. Limit to two review rounds per invocation unless the user requests more; the style documentation recovery counts as a rerun. Attribute reports to their reviewed revisions. Carry forward a result only when its reviewed code and dependencies remain unchanged; otherwise state that the changed part was not independently re-reviewed. Do not restart the full set just to claim all seven reports cover the final revision. Report remaining gaps rather than silently extending rounds.
 
