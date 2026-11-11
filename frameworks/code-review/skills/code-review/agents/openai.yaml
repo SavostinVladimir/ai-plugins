@@ -1,4 +1,4 @@
 interface:
-  display_name: "Ревью кода: 7 агентов"
+  display_name: "code-review"
   short_description: "Состояние, тесты, архитектура, простота, стиль, OWASP и спека"
   default_prompt: "Используй $code-review: проверь изменения семью независимыми ревьюерами."

@@ -1,4 +1,4 @@
 id = "session-review"
-version = "1.0.1"
+version = "1.0.2"
 name = "Session review"
 description = "Three independent context-engineering reviewers per session, grouped by directory."

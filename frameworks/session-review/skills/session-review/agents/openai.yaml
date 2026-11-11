@@ -1,5 +1,5 @@
 interface:
-  display_name: "Ревью сессий: контекст"
+  display_name: "session-review"
   short_description: "Три роли на сессию, проблемы по директориям и общий топ-5"
   default_prompt: "Используй $session-review: разбери сессии за последнюю неделю и предложи улучшения контекста."
 

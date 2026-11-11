@@ -1,5 +1,5 @@
 interface:
-  display_name: "Журнал замечаний к коду"
+  display_name: "code-review-journal"
   short_description: "Раунды правок и материал для улучшения промптов"
   default_prompt: "Используй $code-review-journal: сохрани доступные раунды замечаний к коду и кандидаты в инструкции."
 

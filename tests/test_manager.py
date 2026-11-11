@@ -88,7 +88,7 @@ class ManagerTests(unittest.TestCase):
         self.assertIn(str((self.dest/'agents').resolve()),skill)
         self.assertIn('spec-cuj.toml',skill)
         self.assertNotIn('{{agents_path}}',skill)
-        self.assertIn('5 агентов',(self.dest/'skills/spec-review/agents/openai.yaml').read_text())
+        self.assertIn('display_name: "spec-review"',(self.dest/'skills/spec-review/agents/openai.yaml').read_text())
         self.assertEqual(self.run_cli('install','spec-review')['changes'],[])
         self.assertEqual(self.run_cli('check')['packages'][0]['issues'],[])
         self.run_cli('uninstall','spec-review')

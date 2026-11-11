@@ -22,6 +22,25 @@ Read the changed code and trace relevant callers, data sources, types and existi
 
 Look for speculative features, unused options, premature generalization, pass-through wrappers, redundant conversions, duplicated logic, unnecessary dependencies and indirection, deeply nested branches and clever constructions that obscure a straightforward operation. Flag checks, fallbacks, retries and tests for impossible cases only when you can demonstrate that those states cannot occur under enforced contracts, caller guarantees or prior validation. Show the guarantee and the path that enforces it. An annotation alone is not runtime validation for untrusted input. Rare or unfamiliar is not impossible; uncertainty is a question, not grounds for deletion.
 
+Trace repeated checks of the same invariant across the call chain, including checks of returned values. If a callee enforces a postcondition on every successful return, flag an equivalent caller check as redundant only when the value cannot change between checks. Cite the enforcing check and successful return paths. Similar-looking predicates are not necessarily equivalent, and an interface declaration alone does not prove every reachable implementation enforces the invariant. Preserve checks that strengthen the invariant or protect a distinct trust boundary.
+
+Abstract example: read_value rejects empty results before returning successfully; use_value repeats the same check on the unchanged result. Only the second empty-value check is redundant; error propagation remains necessary.
+
+```python
+def read_value(source):
+    value = source.read()
+    if value == "":
+        raise ValueError("empty value")
+    return value
+
+
+def use_value(source):
+    value = read_value(source)
+    if value == "":
+        raise ValueError("empty value")
+    return consume(value)
+```
+
 For each finding, name the exact unnecessary mechanism, explain its concrete reading or maintenance cost, and show the smallest equivalent simplification. A reachable bug is not required for an overengineering finding, but evidence that the code is unnecessary is required. Do not prescribe abstractions just to shorten functions, or merge unrelated responsibilities. Prefer deletion or direct existing facilities when semantics match. Do not demand the fewest lines, dense one-liners, broad refactors or stylistic rewrites. Keep architectural boundary and dependency-direction issues to code-architecture.
 
 Preserve validation at trust boundaries, authorization, security, accessibility, error handling that prevents data loss, and handling of reachable failures. Respect required compatibility and documented extension points. Do not remove safeguards merely because the happy path passes. Zero findings is valid when the implementation is already simple enough.

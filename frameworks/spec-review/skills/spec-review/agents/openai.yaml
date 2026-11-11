@@ -1,4 +1,4 @@
 interface:
-  display_name: "Ревью спеки: 5 агентов"
+  display_name: "spec-review"
   short_description: "Запрос, лишнее, пропуски, источники и путь пользователя"
   default_prompt: "Используй $spec-review: проверь указанную спеку пятью независимыми ревьюерами."
